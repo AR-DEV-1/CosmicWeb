@@ -1,6 +1,7 @@
 #define API_COSMIC_WEB
 #include "include/GL/glew.h"
 #include "include/GLFW/glfw3.h"
+#include <gl/gl.h>
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "include/stb_truetype.h"
 #include <iostream>
