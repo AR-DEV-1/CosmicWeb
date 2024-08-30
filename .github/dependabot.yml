@@ -1,0 +1,6 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions" # Use "github-actions" if you're using GitHub Actions
+    directory: "/" # Root directory where your dependency file is located
+    schedule:
+      interval: "weekly" # Check for updates weekly
