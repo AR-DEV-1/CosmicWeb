@@ -16,7 +16,7 @@
 
 // Cosmic Web Engine Implementation
 
-// Write callback function to accumulate the response data
+
 static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     size_t totalSize = size * nmemb;
     char** responsePtr = (char**)userp;
@@ -34,8 +34,7 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* use
     return totalSize;
 }
 
-// Perform an HTTP/HTTPS request
-char* Http_Request(const char* url, HttpMethod method, const char* postData) {
+char* Http_Request(const char* url, const char* postData) {
     CURL* curl = curl_easy_init();
     if (!curl) {
         return NULL;
@@ -47,7 +46,7 @@ char* Http_Request(const char* url, HttpMethod method, const char* postData) {
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
-    if (method == HTTP_POST && postData) {
+    if (postData) {
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData);
     }
@@ -62,34 +61,19 @@ char* Http_Request(const char* url, HttpMethod method, const char* postData) {
     return response;
 }
 
-// Start the Cosmic Web Engine
-void startEngine() {
-    std::cout << "Starting Cosmic Web Engine..." << std::endl;
-    // Initialize HTTP library
-    if (Http_Init() != 0) {
-        std::cout << "Failed to initialize HTTP library." << std::endl;
-    }
-}
-
-// Example API call function using the HTTP/HTTPS library
-void callAPI() {
-    // GitHub API endpoint for fetching repository information
-    const char* url = "https://api.github.com/repos/octocat/Hello-World";
-
-    // GitHub API requires User-Agent header
-    struct curl_slist* headers = NULL;
-    headers = curl_slist_append(headers, "User-Agent: CosmicWebEngine");
+int main() {
+    // URL to the raw JavaScript file on GitHub
+    const char* url = "https://raw.githubusercontent.com/user/repo/main/api.js";
 
     // Perform the GET request
-    char* response = Http_Request(url, HTTP_GET, NULL);
+    char* response = Http_Request(url, NULL);
 
     if (response) {
-        std::cout << "API Response: " << std::endl << response << std::endl;
+        std::cout << "JavaScript File Content: " << std::endl << response << std::endl;
         free(response);  // Free the response buffer
     } else {
         std::cout << "Failed to get response from API." << std::endl;
     }
 
-    // Cleanup HTTP library
-    Http_Cleanup();
+    return 0;
 }
