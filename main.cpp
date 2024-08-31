@@ -3,11 +3,17 @@
 #include "include/engine.h"
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "include/stb_truetype.h"
+#include "include/httplib.h"  // Include the cpp-httplib header
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <cstdlib>
 #include <cstring>
+#include <string>
+#include "include/libcurl/curl/curl.h"
+#include <thread>
+#include <regex>
+#include "include/gumbo.h"
 
 // Copyright AR-DEV-1
 // Copyright The Cosmic Web Authors
@@ -15,65 +21,89 @@
 // The runtime, software, source and etc are all provided under GNU GPL 3.0
 
 // Cosmic Web Engine Implementation
-
-
+// Callback function to handle data received by libcurl
 static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     size_t totalSize = size * nmemb;
-    char** responsePtr = (char**)userp;
-
-    // Reallocate memory to hold the new chunk of data
-    *responsePtr = (char*)realloc(*responsePtr, strlen(*responsePtr) + totalSize + 1);
-    if (*responsePtr == NULL) {
-        // Memory allocation failed
-        return 0;
-    }
-
-    // Append the new data to the response string
-    strncat(*responsePtr, (char*)contents, totalSize);
-
+    std::string* response = static_cast<std::string*>(userp);
+    response->append(static_cast<char*>(contents), totalSize);
     return totalSize;
 }
 
-char* Http_Request(const char* url, const char* postData) {
-    CURL* curl = curl_easy_init();
-    if (!curl) {
-        return NULL;
+// Function to perform an HTTP GET request using libcurl
+std::string Http_Get(const std::string& url) {
+    CURL* curl;
+    CURLcode res;
+    std::string readBuffer;
+
+    curl = curl_easy_init();
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+            readBuffer = "";
+        }
+        curl_easy_cleanup(curl);
     }
-
-    char* response = (char*)calloc(1, sizeof(char));  // Start with an empty string
-
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-
-    if (postData) {
-        curl_easy_setopt(curl, CURLOPT_POST, 1L);
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postData);
-    }
-
-    CURLcode res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
-        free(response);
-        response = NULL;
-    }
-
-    curl_easy_cleanup(curl);
-    return response;
+    return readBuffer;
 }
 
-int main() {
-    // URL to the raw JavaScript file on GitHub
-    const char* url = "https://raw.githubusercontent.com/user/repo/main/api.js";
+// Helper function to extract text content from an HTML node
+std::string ExtractTextFromNode(GumboNode* node) {
+    if (node->type != GUMBO_NODE_TEXT) return "";
 
-    // Perform the GET request
-    char* response = Http_Request(url, NULL);
+    return std::string(node->v.text.text);
+}
 
-    if (response) {
-        std::cout << "JavaScript File Content: " << std::endl << response << std::endl;
-        free(response);  // Free the response buffer
-    } else {
-        std::cout << "Failed to get response from API." << std::endl;
+// Recursive function to search for results in the HTML tree
+void SearchForResults(GumboNode* node, std::string& resultsHtml) {
+    if (node->type != GUMBO_NODE_ELEMENT) return;
+
+    GumboVector* children = &node->v.element.children;
+    for (unsigned int i = 0; i < children->length; ++i) {
+        GumboNode* child = static_cast<GumboNode*>(children->data[i]);
+        if (child->type == GUMBO_NODE_ELEMENT && child->v.element.tag == GUMBO_TAG_A) {
+            GumboNode* link = static_cast<GumboNode*>(child);
+            std::string title = ExtractTextFromNode(link);
+            std::string url = ExtractTextFromNode(link);
+            if (!url.empty() && !title.empty()) {
+                resultsHtml += "<div class='result'>";
+                resultsHtml += "<h3><a href='" + url + "'>" + title + "</a></h3>";
+                resultsHtml += "</div>";
+            }
+        }
+        SearchForResults(child, resultsHtml);
+    }
+}
+
+// Function to handle search requests and parse DuckDuckGo results
+void handleSearchRequest(const std::string& query, httplib::Response& res) {
+    std::string searchUrl = "https://duckduckgo.com/lite?q=" + curl_easy_escape(nullptr, query.c_str(), query.length());
+
+    // Perform the HTTP GET request
+    std::string response = Http_Get(searchUrl);
+
+    if (response.empty()) {
+        std::cerr << "Failed to fetch search results." << std::endl;
+        res.status = 500;
+        res.set_content("Failed to fetch search results.", "text/plain");
+        return;
     }
 
-    return 0;
+    // Parse HTML with Gumbo
+    GumboOutput* output = gumbo_parse(response.c_str());
+
+    std::string resultsHtml;
+    SearchForResults(output->root, resultsHtml);
+
+    gumbo_destroy_output(&kGumboDefaultOptions, output);
+
+    if (resultsHtml.empty()) {
+        resultsHtml = "<p>No results found.</p>";
+    }
+
+    res.set_content(resultsHtml, "text/html");
 }
