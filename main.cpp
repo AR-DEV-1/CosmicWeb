@@ -14,7 +14,9 @@
 #include <thread>
 #include <regex>
 #include "include/gumbo.h"
-
+#include "include/Symm/symm.h" // Use the Symm header file 
+#define SYMM_API
+#define SYMM_IMPLEMENTATION
 // Copyright AR-DEV-1
 // Copyright The Cosmic Web Authors
 // This software and its source is provided under GNU GPL 3.0
