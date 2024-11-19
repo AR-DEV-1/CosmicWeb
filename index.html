@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,9 +7,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cosmic Web Search Engine</title>
     <style>
+        /* Animated gradient background */
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
             margin: 0;
             padding: 0;
             display: flex;
@@ -15,14 +23,21 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
+            /* Gradient settings */
+            background: linear-gradient(45deg, #28313B, #485461, #28313B);
+            background-size: 200% 200%;
+            animation: gradient 15s ease infinite;
+            color: white;
         }
+
         .search-container {
             text-align: center;
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.9);
             padding: 50px;
             border-radius: 10px;
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
         }
+
         input[type="text"] {
             width: 300px;
             padding: 10px;
@@ -31,6 +46,7 @@
             border: 1px solid #ccc;
             margin-bottom: 10px;
         }
+
         input[type="submit"] {
             padding: 10px 20px;
             font-size: 18px;
@@ -40,16 +56,18 @@
             color: white;
             cursor: pointer;
         }
+
         input[type="submit"]:hover {
             background-color: #45a049;
         }
+
         h1 {
             margin-bottom: 20px;
             color: #333;
         }
     </style>
     <script>
-        // Optional JavaScript if you want to handle form submission dynamically
+        // Optional JavaScript for handling form submission
         function performSearch(event) {
             event.preventDefault();
             const query = document.getElementById('searchQuery').value;
@@ -57,7 +75,6 @@
                 alert('Please enter a search query.');
                 return;
             }
-            // Redirect to DuckDuckGo search results
             window.location.href = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
         }
     </script>
@@ -73,4 +90,3 @@
     </div>
 </body>
 </html>
-
