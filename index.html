@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,11 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cosmic Web Search Engine</title>
     <style>
-        /* Animated gradient background */
-        @keyframes gradient {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        /* Video background styling */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
         }
 
         body {
@@ -23,11 +26,9 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            /* Gradient settings */
-            background: linear-gradient(45deg, #28313B, #485461, #28313B);
-            background-size: 200% 200%;
-            animation: gradient 15s ease infinite;
+            background-color: #000; /* Fallback color for unsupported browsers */
             color: white;
+            overflow: hidden;
         }
 
         .search-container {
@@ -36,6 +37,7 @@
             padding: 50px;
             border-radius: 10px;
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1;
         }
 
         input[type="text"] {
@@ -67,7 +69,6 @@
         }
     </style>
     <script>
-        // Optional JavaScript for handling form submission
         function performSearch(event) {
             event.preventDefault();
             const query = document.getElementById('searchQuery').value;
@@ -80,6 +81,14 @@
     </script>
 </head>
 <body>
+
+    <!-- Video background element -->
+    <video autoplay loop muted class="video-background">
+        <source src="background.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <!-- Search Container -->
     <div class="search-container">
         <h1>Cosmic Web Search</h1>
         <form onsubmit="performSearch(event)">
@@ -88,5 +97,6 @@
             <input type="submit" value="Search">
         </form>
     </div>
+
 </body>
 </html>
